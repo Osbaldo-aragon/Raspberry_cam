@@ -13,10 +13,10 @@ def mouse_callback(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDOWN and frame_bgr is not None:
         hsv = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2HSV)
         selected_hsv = hsv[y, x].copy()
-        print(f"HSV seleccionado: {selected_hsv}")
+        print("HSV seleccionado:", selected_hsv)
 
 def build_mask(hsv_img, hsv_ref, h_tol, s_tol, v_tol):
-    h, s, v = int(hsv_ref[0]), int(hsv_ref[1]), int(hsv_ref[2])
+    h, s, v = map(int, hsv_ref)
 
     lower_s = max(0, s - s_tol)
     upper_s = min(255, s + s_tol)
@@ -74,7 +74,7 @@ cv2.createTrackbar("Tol S", "Controles", 50, 255, nothing)
 cv2.createTrackbar("Tol V", "Controles", 50, 255, nothing)
 
 while True:
-    frame_bgr = picam2.capture_array()   # ya viene listo para OpenCV
+    frame_bgr = picam2.capture_array()   # ya está en el orden correcto para OpenCV
     display = frame_bgr.copy()
 
     if selected_hsv is not None:
@@ -89,13 +89,9 @@ while True:
 
         cv2.imshow("Mascara", mask)
         cv2.imshow("Resultado", result)
-        cv2.putText(display, f"HSV: {selected_hsv}", (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
     else:
         cv2.imshow("Mascara", np.zeros((480, 640), dtype=np.uint8))
         cv2.imshow("Resultado", np.zeros((480, 640, 3), dtype=np.uint8))
-        cv2.putText(display, "Haz clic sobre un color", (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
 
     cv2.imshow("Camara", display)
 
