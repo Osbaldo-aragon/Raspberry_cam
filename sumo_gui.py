@@ -1,3 +1,26 @@
+'''
+sudo apt update
+sudo apt install bluetooth bluez bluez-tools
+sudo systemctl enable bluetooth
+sudo systemctl start bluetooth
+
+bluetoothctl
+power on
+agent on
+default-agent
+scan on
+
+pair AA:BB:CC:DD:EE:FF
+trust AA:BB:CC:DD:EE:FF
+info AA:BB:CC:DD:EE:FF
+exit
+
+sudo rfcomm release 0
+sudo rfcomm bind 0 AA:BB:CC:DD:EE:FF
+ls -l /dev/rfcomm0
+ser = serial.Serial('/dev/rfcomm0', 9600, timeout=1)
+'''
+# -*- coding: utf-8 -*-
 import tkinter as tk
 from tkinter import messagebox
 import serial
@@ -39,7 +62,7 @@ class RobotController(tk.Tk):
         super().__init__()
 
         self.title("LLANERO Bluetooth Control")
-        self.geometry("420x500")
+        self.geometry("800x400")
         self.resizable(False, False)
         self.configure(bg="#101820")
 
@@ -52,17 +75,27 @@ class RobotController(tk.Tk):
         self.bind_keys()
 
     def build_ui(self):
+        main = tk.Frame(self, bg="#101820")
+        main.pack(fill="both", expand=True, padx=15, pady=15)
+
+        left_panel = tk.Frame(main, bg="#101820", width=260)
+        left_panel.pack(side="left", fill="y", padx=(0, 20))
+        left_panel.pack_propagate(False)
+
+        right_panel = tk.Frame(main, bg="#101820")
+        right_panel.pack(side="left", fill="both", expand=True)
+
         title = tk.Label(
-            self,
+            left_panel,
             text="LLANERO CONTROL",
-            font=("Arial", 18, "bold"),
+            font=("Arial", 16, "bold"),
             fg="cyan",
             bg="#101820"
         )
-        title.pack(pady=10)
+        title.pack(pady=(10, 15))
 
         self.status_label = tk.Label(
-            self,
+            left_panel,
             text="DISCONNECTED",
             font=("Arial", 12, "bold"),
             fg="red",
@@ -71,7 +104,7 @@ class RobotController(tk.Tk):
         self.status_label.pack(pady=5)
 
         port_label = tk.Label(
-            self,
+            left_panel,
             text="Port: " + PORT,
             font=("Arial", 11),
             fg="white",
@@ -79,42 +112,51 @@ class RobotController(tk.Tk):
         )
         port_label.pack(pady=5)
 
-        btn_frame = tk.Frame(self, bg="#101820")
-        btn_frame.pack(pady=10)
-
         self.connect_btn = tk.Button(
-            btn_frame,
+            left_panel,
             text="CONNECT",
             font=("Arial", 11, "bold"),
-            width=12,
+            width=14,
+            height=2,
             bg="green",
             fg="white",
             command=self.toggle_connection
         )
-        self.connect_btn.grid(row=0, column=0, padx=5)
+        self.connect_btn.pack(pady=(15, 10))
 
         self.stop_btn = tk.Button(
-            btn_frame,
+            left_panel,
             text="STOP",
             font=("Arial", 11, "bold"),
-            width=12,
+            width=14,
+            height=2,
             bg="red",
             fg="white",
             command=lambda: self.send_command("S")
         )
-        self.stop_btn.grid(row=0, column=1, padx=5)
+        self.stop_btn.pack(pady=10)
 
         self.last_cmd_label = tk.Label(
-            self,
+            left_panel,
             text="Last command: None",
             font=("Arial", 12),
             fg="white",
             bg="#101820"
         )
-        self.last_cmd_label.pack(pady=10)
+        self.last_cmd_label.pack(pady=(20, 10))
 
-        pad = tk.Frame(self, bg="#101820")
-        pad.pack(pady=20)
+        info = tk.Label(
+            left_panel,
+            text="Keyboard:\nW A S D or arrows",
+            font=("Arial", 10),
+            fg="gray",
+            bg="#101820",
+            justify="left"
+        )
+        info.pack(pady=10)
+
+        pad_container = tk.Frame(right_panel, bg="#101820")
+        pad_container.pack(expand=True)
 
         self.buttons = {}
 
@@ -128,29 +170,22 @@ class RobotController(tk.Tk):
             for c, item in enumerate(row):
                 cmd, label = item
                 btn = tk.Label(
-                    pad,
+                    pad_container,
                     text=label,
-                    font=("Arial", 20, "bold"),
-                    width=4,
-                    height=2,
+                    font=("Arial", 16, "bold"),
+                    width=3,
+                    height=1,
                     bg="#2a2a2a",
                     fg="white",
                     relief="raised",
-                    bd=3
+                    bd=3,
+                    padx=18,
+                    pady=18
                 )
-                btn.grid(row=r, column=c, padx=5, pady=5)
+                btn.grid(row=r, column=c, padx=8, pady=8)
                 btn.bind("<ButtonPress-1>", lambda e, x=cmd: self.on_mouse_press(x))
                 btn.bind("<ButtonRelease-1>", lambda e, x=cmd: self.on_mouse_release(x))
                 self.buttons[cmd] = btn
-
-        info = tk.Label(
-            self,
-            text="Keyboard: W A S D or arrows",
-            font=("Arial", 10),
-            fg="gray",
-            bg="#101820"
-        )
-        info.pack(pady=10)
 
     def bind_keys(self):
         self.bind("<KeyPress>", self.on_key_press)
